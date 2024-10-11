@@ -170,12 +170,12 @@ def main():
                 for x in ['train', 'val']}
     # Use extra DG-Market Dataset for training. Please download it from https://github.com/NVlabs/DG-Net#dg-market.
     if opt.DG:
-        if not os.path.isdir('../DG-Market'):
+        if not os.path.isdir('DG-Market'):
             os.system('gdown 126Gn90Tzpk3zWp2c7OBYPKc-ZjhptKDo')
             os.system('unzip DG-Market.zip -d ../')
             os.system('rm DG-Market.zip')
             
-        image_datasets['DG'] = DGFolder(os.path.join('../DG-Market' ),
+        image_datasets['DG'] = DGFolder(os.path.join('DG-Market' ),
                                             data_transforms['train'])
         dataloaders['DG'] = torch.utils.data.DataLoader(image_datasets['DG'], batch_size = max(8, opt.batchsize//2),
                                                 shuffle=True, num_workers=2, pin_memory=True)
@@ -510,7 +510,7 @@ def main():
         optim_name = FusedSGD
 
     if torch.cuda.get_device_capability()[0]>6 and len(opt.gpu_ids)==1 and int(version[0])>1: # should be >=7 and one gpu
-        torch.set_float32_matmul_precision('high')
+        torch.set_float32_matmul_precision('high') 
         print("Compiling model... The first epoch may be slow, which is expected!")
         # https://huggingface.co/docs/diffusers/main/en/optimization/torch2.0
         # model = torch.compile(model, mode="reduce-overhead", dynamic = True) # pytorch 2.0
@@ -519,7 +519,8 @@ def main():
         model = torch.nn.DataParallel(model, device_ids=opt.gpu_ids) 
         if not opt.PCB:
             ignored_params = list(map(id, model.module.classifier.parameters() ))
-            base_params = filter(lambda p: id(p) not in ignored_params, model.module.parameters())
+            base_params = filter(lambda p:
+             id(p) not in ignored_params, model.module.parameters())
             classifier_params = model.module.classifier.parameters()
             optimizer_ft = optim_name([
                 {'params': base_params, 'lr': 0.1*opt.lr},
