@@ -34,6 +34,8 @@ except ImportError: # will be 3.x series
 # Options
 # --------
 def main():
+    faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
     parser = argparse.ArgumentParser(description='Test')
     parser.add_argument('--gpu_ids',default='0', type=str,help='gpu_ids: e.g. 0  0,1,2  0,2')
     parser.add_argument('--which_epoch',default='last', type=str, help='0,1,2,3...or last')
@@ -327,8 +329,18 @@ def main():
                     # if is_blurry(frame):
                     #     print(f"Skipping blurry frame")
                     #     continue
-
+                    
                     cropped_image = frame[int(y1):int(y2), int(x1):int(x2)]
+                    # Before feature extract, if there is faces, blur the face
+                    faces = faceCascade.detectMultiScale(cropped_image,1.2,4)
+                    for (x, y, w, h) in faces:
+                        # To make a face blurred
+                        ROI = cropped_image[y:y+h, x:x+w]
+                        blur = cv2.GaussianBlur(ROI, (91,91),0) 
+                        # Insert ROI back into image
+                        cropped_image[y:y+h, x:x+w] = blur
+
+
                     features = extract_feature(model, cropped_image)
 
                     temp = features.detach().cpu().numpy()
